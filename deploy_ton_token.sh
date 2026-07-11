@@ -21,7 +21,7 @@ error() { echo -e "${RED}[✘]${NC} $1"; exit 1; }
 
 # 1. بررسی سیستم
 log "در حال بررسی سیستم..."
-[[ $(node -v | cut -d'v' -f2 | cut -d'.' -f1) -lt 20 ]] && error "Node.js 20+ required"
+[[ $(node -v | cut -d'v' -f2 | cut -d'.' -f1) -lt 20 ]] && error "Node.js 24+ required"
 command -v npm >/dev/null 2>&1 || error "npm is not installed"
 
 # 2. دریافت اطلاعات از کاربر
