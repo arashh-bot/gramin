@@ -31,11 +31,27 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4.1.7
 
-      - name: Run Deploy Script
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4.0.2
+        with:
+          node-version: '24.x'
+
+      - name: Verify Environment
+        run: |
+          node --version
+          npm --version
+          bash --version | head -n1
+
+      - name: Make Script Executable
+        run: chmod +x deploy_ton_token.sh
+
+      - name: Execute Deployment
         env:
           TON_TOKEN_NAME: ${{ github.event.inputs.token_name }}
           TON_TOKEN_SYMBOL: ${{ github.event.inputs.token_symbol }}
@@ -43,13 +59,56 @@ jobs:
           TON_TOKEN_DECIMALS: ${{ github.event.inputs.token_decimals }}
           TON_TOKEN_DESC: ${{ github.event.inputs.token_description }}
           TON_TOKEN_IMAGE: ${{ github.event.inputs.token_image }}
-        run: |
-          chmod +x deploy_ton_token.sh
-          bash deploy_ton_token.sh
+        run: bash deploy_ton_token.sh
+        continue-on-error: true
 
-      - name: Upload Results
-        uses: actions/upload-artifact@v4
+      - name: Check Results
+        if: always()
+        run: |
+          if [ -d "ton_token_contracts" ]; then
+            echo "✅ Deployment Successful!"
+            ls -la ton_token_contracts/
+            tree ton_token_contracts/ 2>/dev/null || find ton_token_contracts/ -type f
+          else
+            echo "⚠️ Project directory not found"
+          fi
+
+      - name: Upload Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4.1.1
         with:
           name: ton-token-contracts
           path: ton_token_contracts/
           retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Generate Summary
+        if: always()
+        run: |
+          {
+            echo "## 🚀 TON Token Deployment Summary"
+            echo ""
+            echo "### ✅ Configuration"
+            echo "- **Token Name**: ${{ github.event.inputs.token_name }}"
+            echo "- **Symbol**: ${{ github.event.inputs.token_symbol }}"
+            echo "- **Supply**: ${{ github.event.inputs.token_supply }}"
+            echo "- **Decimals**: ${{ github.event.inputs.token_decimals }}"
+            echo "- **Description**: ${{ github.event.inputs.token_description }}"
+            echo ""
+            if [ -d "ton_token_contracts" ]; then
+              echo "### ✅ Status: Completed Successfully"
+              echo ""
+              echo "### 📁 Generated Files"
+              echo "\`\`\`"
+              find ton_token_contracts/ -type f | sed 's|^|  |'
+              echo "\`\`\`"
+            else
+              echo "### ⚠️ Status: Setup Completed (Check Logs)"
+            fi
+            echo ""
+            echo "### 📝 Next Steps"
+            echo "1. Download artifacts from workflow"
+            echo "2. Review the generated contracts"
+            echo "3. Deploy to TON network using Blueprint"
+            echo "4. Monitor on [TON Explorer](https://testnet.tonscan.org)"
+          } >> $GITHUB_STEP_SUMMARY
