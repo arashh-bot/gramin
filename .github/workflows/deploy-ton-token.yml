@@ -4,61 +4,38 @@ on:
   workflow_dispatch:
     inputs:
       token_name:
-        description: 'Token Name (e.g. Bitcoin)'
+        description: 'Token Name'
         required: true
         default: 'GramineToken'
       token_symbol:
-        description: 'Token Symbol (e.g. BTC)'
+        description: 'Token Symbol'
         required: true
         default: 'GRM'
       token_supply:
-        description: 'Total Supply (Amount)'
+        description: 'Total Supply'
         required: true
         default: '1000000'
       token_decimals:
-        description: 'Decimals (Default 9)'
+        description: 'Decimals'
         required: false
         default: '9'
       token_description:
-        description: 'Token Description'
+        description: 'Description'
         required: true
         default: 'Gramine Token on TON Network'
       token_image:
-        description: 'Image URL (Optional)'
+        description: 'Image URL'
         required: false
         default: 'https://ton.org/download/ton_symbol.png'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
 
     steps:
-      - name: 📥 Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: 🔧 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: 📋 Display Token Configuration
-        run: |
-          echo "🚀 TON Jetton Deployment Configuration"
-          echo "========================================"
-          echo "Token Name: ${{ github.event.inputs.token_name }}"
-          echo "Token Symbol: ${{ github.event.inputs.token_symbol }}"
-          echo "Total Supply: ${{ github.event.inputs.token_supply }}"
-          echo "Decimals: ${{ github.event.inputs.token_decimals }}"
-          echo "Description: ${{ github.event.inputs.token_description }}"
-          echo "Image URL: ${{ github.event.inputs.token_image }}"
-          echo "========================================"
-
-      - name: 🔐 Make script executable
-        run: chmod +x deploy_ton_token.sh
-
-      - name: 🚀 Execute Deploy Script
+      - name: Run Deploy Script
         env:
           TON_TOKEN_NAME: ${{ github.event.inputs.token_name }}
           TON_TOKEN_SYMBOL: ${{ github.event.inputs.token_symbol }}
@@ -66,34 +43,13 @@ jobs:
           TON_TOKEN_DECIMALS: ${{ github.event.inputs.token_decimals }}
           TON_TOKEN_DESC: ${{ github.event.inputs.token_description }}
           TON_TOKEN_IMAGE: ${{ github.event.inputs.token_image }}
-        run: bash deploy_ton_token.sh
-
-      - name: 📊 Generate Summary
-        if: success()
         run: |
-          echo "## ✅ TON Token Deployment Completed" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Token Information" >> $GITHUB_STEP_SUMMARY
-          echo "- **Name**: ${{ github.event.inputs.token_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Symbol**: ${{ github.event.inputs.token_symbol }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Supply**: ${{ github.event.inputs.token_supply }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Decimals**: ${{ github.event.inputs.token_decimals }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
-          echo "1. Review the generated contract files" >> $GITHUB_STEP_SUMMARY
-          echo "2. Deploy to TON Testnet" >> $GITHUB_STEP_SUMMARY
-          echo "3. Monitor via [TON Explorer](https://testnet.tonscan.org)" >> $GITHUB_STEP_SUMMARY
+          chmod +x deploy_ton_token.sh
+          bash deploy_ton_token.sh
 
-      - name: 📤 Upload Artifacts
-        if: success()
-        uses: actions/upload-artifact@v3
+      - name: Upload Results
+        uses: actions/upload-artifact@v4
         with:
           name: ton-token-contracts
-          path: ninja_token_*/
+          path: ton_token_contracts/
           retention-days: 30
-
-      - name: ❌ Deployment Failed
-        if: failure()
-        run: |
-          echo "## ❌ Deployment Failed" >> $GITHUB_STEP_SUMMARY
-          echo "Please check the logs above for details." >> $GITHUB_STEP_SUMMARY
