@@ -35,18 +35,17 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v4
 
       - name: Setup Node.js 24
-        uses: actions/setup-node@v4.0.2
+        uses: actions/setup-node@v4
         with:
-          node-version: '24.x'
+          node-version: '24'
 
       - name: Verify Environment
         run: |
           node --version
           npm --version
-          bash --version | head -n1
 
       - name: Make Script Executable
         run: chmod +x deploy_ton_token.sh
@@ -62,20 +61,9 @@ jobs:
         run: bash deploy_ton_token.sh
         continue-on-error: true
 
-      - name: Check Results
-        if: always()
-        run: |
-          if [ -d "ton_token_contracts" ]; then
-            echo "✅ Deployment Successful!"
-            ls -la ton_token_contracts/
-            tree ton_token_contracts/ 2>/dev/null || find ton_token_contracts/ -type f
-          else
-            echo "⚠️ Project directory not found"
-          fi
-
       - name: Upload Artifacts
         if: always()
-        uses: actions/upload-artifact@v4.1.1
+        uses: actions/upload-artifact@v4
         with:
           name: ton-token-contracts
           path: ton_token_contracts/
@@ -93,7 +81,6 @@ jobs:
             echo "- **Symbol**: ${{ github.event.inputs.token_symbol }}"
             echo "- **Supply**: ${{ github.event.inputs.token_supply }}"
             echo "- **Decimals**: ${{ github.event.inputs.token_decimals }}"
-            echo "- **Description**: ${{ github.event.inputs.token_description }}"
             echo ""
             if [ -d "ton_token_contracts" ]; then
               echo "### ✅ Status: Completed Successfully"
@@ -103,12 +90,11 @@ jobs:
               find ton_token_contracts/ -type f | sed 's|^|  |'
               echo "\`\`\`"
             else
-              echo "### ⚠️ Status: Setup Completed (Check Logs)"
+              echo "### ⚠️ Status: Setup Completed"
             fi
             echo ""
             echo "### 📝 Next Steps"
-            echo "1. Download artifacts from workflow"
-            echo "2. Review the generated contracts"
-            echo "3. Deploy to TON network using Blueprint"
-            echo "4. Monitor on [TON Explorer](https://testnet.tonscan.org)"
+            echo "1. Download artifacts"
+            echo "2. Review contracts"
+            echo "3. Deploy with TON Blueprint"
           } >> $GITHUB_STEP_SUMMARY
